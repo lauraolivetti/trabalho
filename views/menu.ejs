@@ -7,12 +7,27 @@
 <body>
     <h1>Menu do Campeonato</h1>
     
-    <p><strong>Último acesso:</strong> <%= ultimoAcesso %></p>
+    <div class="alert alert-info" role="alert">
+        <strong>Último acesso:</strong> <%= ultimoAcesso %>
+    </div>
 
-    <nav>
-        <ul>
-            <li><a href="/equipes">Cadastro de Equipes</a></li> <li><a href="/jogadores">Cadastro de Jogadores</a></li> <li><a href="/logout">Sair</a></li>
-        </ul>
+    <nav class="mt-4">
+        <div class="list-group">
+            <a href="/equipes" class="list-group-item list-group-item-action">
+                <h5>Cadastro de Equipes (Times)</h5>
+                <p class="mb-0 text-muted">Gerenciar o nome, capitão e contato das equipes.</p>
+            </a>
+            
+            <a href="/jogadores" class="list-group-item list-group-item-action">
+                <h5>Cadastro de Jogadores</h5>
+                <p class="mb-0 text-muted">Incluir jogadores, função, elo e vincular a uma equipe.</p>
+            </a>
+            
+            <a href="/logout" class="list-group-item list-group-item-action text-danger">
+                <h5>Sair do Sistema (Logout)</h5>
+            </a>
+        </div>
     </nav>
+</div>
 </body>
 </html>

@@ -8,68 +8,119 @@
     <a href="/">Voltar ao Menu</a>
     <h2>Cadastro de Jogador</h2>
 
-    <% if (erro) { %> <p style="color: red;"><%= erro %></p> <% } %>
+    <% if (erro) { %> 
+        <div class="alert alert-danger" role="alert">
+            <%= erro %>
+        </div> 
+    <% } %>
 
-    <form action="/jogadores" method="POST">
-        <label>Nome: <input type="text" name="nome"></label><br>
-        <label>Nickname: <input type="text" name="nickname"></label><br>
+    <form action="/jogadores" method="POST" class="mb-5 row g-3">
+        <div class="col-md-6">
+            <label for="nome" class="form-label">Nome Completo</label>
+            <input type="text" class="form-control" id="nome" name="nome" required>
+        </div>
+        <div class="col-md-6">
+            <label for="nickname" class="form-label">Nickname In-Game</label>
+            <input type="text" class="form-control" id="nickname" name="nickname" required>
+        </div>
         
-        <label>Função:</label>
-        <select name="funcao">
-            <option value="Top">Top</option>
-            <option value="Jungle">Jungle</option>
-            <option value="Mid">Mid</option>
-            <option value="Atirador">Atirador</option>
-            <option value="Suporte">Suporte</option>
-        </select><br>
-
-        <label>Elo: <input type="text" name="elo" placeholder="Ex: Prata"></label><br>
+        <div class="col-md-4">
+            <label for="funcao" class="form-label">Função (Posição)</label>
+            <select class="form-select" id="funcao" name="funcao" required>
+                <option value="" disabled selected>Selecione a Rota...</option>
+                <option value="Top">Top</option>
+                <option value="Jungle">Jungle</option>
+                <option value="Mid">Mid</option>
+                <option value="Atirador">Atirador</option>
+                <option value="Suporte">Suporte</option>
+            </select>
+        </div>
         
-        <label>Gênero:</label>
-        <select name="genero">
-            <option value="M">Masculino</option>
-            <option value="F">Feminino</option>
-            <option value="O">Outro</option>
-        </select><br>
+        <div class="col-md-4">
+            <label for="elo" class="form-label">Elo</label>
+            <select class="form-select" id="elo" name="elo" required>
+                <option value="" disabled selected>Selecione o Elo...</option>
+                <option value="Ferro">Ferro</option>
+                <option value="Bronze">Bronze</option>
+                <option value="Prata">Prata</option>
+                <option value="Ouro">Ouro</option>
+                <option value="Platina">Platina</option>
+                <option value="Diamante">Diamante</option>
+                <option value="Mestre">Mestre</option>
+                <option value="Grão-Mestre">Grão-Mestre</option>
+                <option value="Desafiante">Desafiante</option>
+            </select>
+        </div>
+        
+        <div class="col-md-4">
+            <label for="genero" class="form-label">Gênero</label>
+            <select class="form-select" id="genero" name="genero" required>
+                <option value="" disabled selected>Selecione...</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+                <option value="O">Outro</option>
+            </select>
+        </div>
 
-        <label>Equipe:</label>
-        <select name="equipeId">
-            <option value="" disabled selected>Selecione...</option>
-            <% if (equipes.length > 0) { %>
-                <% equipes.forEach(time => { %>
-                    <option value="<%= time.id %>"><%= time.nome %></option>
-                <% }) %>
-            <% } else { %>
-                <option value="" disabled>Cadastre uma equipe primeiro</option>
+        <!-- Requisito: Caixa de seleção com equipes cadastradas -->
+        <div class="col-12">
+            <label for="equipeId" class="form-label">Equipe</label>
+            <select class="form-select" id="equipeId" name="equipeId" required>
+                <option value="" disabled selected>Selecione a Equipe...</option>
+                <% if (equipes.length > 0) { %>
+                    <% equipes.forEach(time => { %>
+                        <% const vagas = 5 - jogadores.filter(j => j.equipeId == time.id).length; %>
+                        <option 
+                            value="<%= time.id %>" 
+                            <%= vagas <= 0 ? 'disabled' : '' %>
+                        >
+                            <%= time.nome %> (Vagas: <%= vagas %>)
+                        </option>
+                    <% }) %>
+                <% } else { %>
+                    <option value="" disabled>Cadastre uma equipe primeiro</option>
+                <% } %>
+            </select>
+            <% if (equipes.length === 0) { %>
+                <small class="text-danger">É obrigatório cadastrar uma equipe antes de adicionar um jogador.</small>
             <% } %>
-        </select><br><br>
-
-        <button type="submit">Cadastrar Jogador</button>
+        </div>
+        
+        <div class="col-12">
+            <button type="submit" class="btn btn-success">Cadastrar Jogador</button>
+        </div>
     </form>
 
     <hr>
 
-    <h3>Jogadores (Agrupados por Equipe)</h3>
+    <h3>Jogadores Cadastrados (Agrupados por Equipe)</h3>
+    
     <% if (equipes.length > 0) { %>
         <% equipes.forEach(time => { %>
-            <h4>Equipe: <%= time.nome %> (Capitão: <%= time.capitao %>)</h4>
-            <ul>
-                <% const jogadoresDoTime = jogadores.filter(j => j.equipeId == time.id); %>
-                
-                <% if (jogadoresDoTime.length > 0) { %>
-                    <% jogadoresDoTime.forEach(jogador => { %>
-                        <li>
-                            <strong><%= jogador.nickname %></strong> 
-                            (<%= jogador.funcao %>) - Elo: <%= jogador.elo %>
-                        </li>
-                    <% }) %>
-                <% } else { %>
-                    <li><i>Sem jogadores cadastrados.</i></li>
-                <% } %>
-            </ul>
+            <% const jogadoresDoTime = jogadores.filter(j => j.equipeId == time.id); %>
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">Equipe: <%= time.nome %> <small class="text-light">(Capitão: <%= time.capitao %>)</small></h4>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <% if (jogadoresDoTime.length > 0) { %>
+                        <% jogadoresDoTime.forEach(jogador => { %>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong><%= jogador.nickname %></strong> (<%= jogador.funcao %>)
+                                </div>
+                                <span class="badge bg-primary rounded-pill">Elo: <%= jogador.elo %></span>
+                            </li>
+                        <% }) %>
+                    <% } else { %>
+                        <li class="list-group-item text-muted"><i>Sem jogadores cadastrados nesta equipe.</i></li>
+                    <% } %>
+                </ul>
+            </div>
         <% }) %>
     <% } else { %>
-        <p>Nenhuma equipe cadastrada para agrupar jogadores.</p>
+        <div class="alert alert-warning">Nenhuma equipe cadastrada para agrupar jogadores.</div>
     <% } %>
+</div>
 </body>
 </html>

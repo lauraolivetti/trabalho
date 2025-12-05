@@ -8,39 +8,57 @@
     <a href="/">Voltar ao Menu</a>
     <h2>Cadastro de Equipe</h2>
     
-    <% if (erro) { %> <p style="color: red;"><%= erro %></p> <% } %>
+     <% if (erro) { %> 
+        <div class="alert alert-danger" role="alert">
+            <%= erro %>
+        </div> 
+    <% } %>
 
-    <form action="/equipes" method="POST">
-        <label>Nome da Equipe: <input type="text" name="nome"></label><br>
-        <label>Capitão: <input type="text" name="capitao"></label><br>
-        <label>WhatsApp: <input type="text" name="contato"></label><br><br>
-        <button type="submit">Cadastrar Equipe</button>
+    <form action="/equipes" method="POST" class="mb-5 row g-3">
+        <div class="col-md-4">
+            <label for="nome" class="form-label">Nome da Equipe</label>
+            <input type="text" class="form-control" id="nome" name="nome" required>
+        </div>
+        <div class="col-md-4">
+            <label for="capitao" class="form-label">Nome do Capitão</label>
+            <input type="text" class="form-control" id="capitao" name="capitao" required>
+        </div>
+        <div class="col-md-4">
+            <label for="contato" class="form-label">Contato (WhatsApp)</label>
+            <input type="text" class="form-control" id="contato" name="contato" placeholder="(XX) XXXXX-XXXX" required>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Cadastrar Equipe</button>
+        </div>
     </form>
 
     <hr>
 
     <h3>Equipes Cadastradas</h3>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Capitão</th>
-                <th>Contato</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (equipes.length > 0) { %>
-                <% equipes.forEach(time => { %>
-                    <tr>
-                        <td><%= time.nome %></td>
-                        <td><%= time.capitao %></td>
-                        <td><%= time.contato %></td>
-                    </tr>
-                <% }) %>
-            <% } else { %>
-                <tr><td colspan="3">Nenhuma equipe cadastrada.</td></tr>
-            <% } %>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nome</th>
+                    <th>Capitão</th>
+                    <th>Contato</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (equipes.length > 0) { %>
+                    <% equipes.forEach(time => { %>
+                        <tr>
+                            <td><%= time.nome %></td>
+                            <td><%= time.capitao %></td>
+                            <td><%= time.contato %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr><td colspan="3" class="text-center text-muted">Nenhuma equipe cadastrada.</td></tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
 </body>
 </html>

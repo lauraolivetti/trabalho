@@ -6,12 +6,28 @@
 </head>
 <body>
     <h1>Acesso ao Sistema</h1>
-    <% if (erro) { %> <p style="color: red;"><%= erro %></p> <% } %>
+    <% if (erro) { %> 
+        <div class="alert alert-danger" role="alert">
+            <%= erro %>
+        </div> 
+    <% } %>
     
     <form action="/login" method="POST">
-        <label>Usuário: <input type="text" name="usuario"></label><br><br>
-        <label>Senha: <input type="password" name="senha"></label><br><br>
-        <button type="submit">Entrar</button>
+        <div class="mb-3">
+            <label for="usuario" class="form-label">Usuário:</label>
+            <input type="text" class="form-control" id="usuario" name="usuario" required>
+        </div>
+        <div class="mb-4">
+            <label for="senha" class="form-label">Senha:</label>
+            <input type="password" class="form-control" id="senha" name="senha" required>
+        </div>
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Entrar</button>
+        </div>
+        <p class="text-center mt-3 text-muted">
+            <small>Credenciais: <strong>admin</strong> | <strong>admin</strong></small>
+        </p>
     </form>
+</div>
 </body>
 </html>
