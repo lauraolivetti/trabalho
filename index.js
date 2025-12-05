@@ -5,7 +5,6 @@ const bodyParser = require('body-parser');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
 
 // Configurações do Express
 app.set('view engine', 'ejs');
@@ -14,19 +13,27 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Configuração da Sessão (Requisito: 30 minutos) [cite: 33, 67]
+//CORREÇÃO CRÍTICA PARA VERCEL (HTTPS/PROXY) 
+
+app.set('trust proxy', 1);
+
+// Configuração da Sessão (Requisito: 30 minutos)
 app.use(session({
     secret: 'chave-secreta-do-campeonato',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 30 * 60 * 1000 } // 30 minutos
+    cookie: { 
+        maxAge: 30 * 60 * 1000, // 30 minutos
+        secure: true,
+        sameSite: 'none'
+    }
 }));
 
-// -- ARMAZENAMENTO EM MEMÓRIA --
+//ARMAZENAMENTO EM MEMÓRIA 
 const equipes = [];
 const jogadores = [];
 
-// -- MIDDLEWARE DE AUTENTICAÇÃO --
+// MIDDLEWARE DE AUTENTICAÇÃO
 const verificarAuth = (req, res, next) => {
     if (req.session.usuarioLogado) {
         next();
@@ -42,7 +49,7 @@ app.get('/login', (req, res) => {
     res.render('login', { erro: null });
 });
 
-// Processamento do Login [cite: 31, 66]
+// Processamento do Login
 app.post('/login', (req, res) => {
     const { usuario, senha } = req.body;
     if (usuario === 'admin' && senha === 'admin') {
@@ -54,22 +61,28 @@ app.post('/login', (req, res) => {
     }
 });
 
-// Logout [cite: 31]
+// Logout
 app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login');
+    req.session.destroy(err => {
+        if (err) {
+            console.error("Erro ao destruir sessão:", err);
+        }
+        res.redirect('/login');
+    });
 });
 
-// -- ROTAS DO SISTEMA (PROTEGIDAS) --
+// ROTAS DO SISTEMA (PROTEGIDAS)
 
 // Menu Principal
 app.get('/', verificarAuth, (req, res) => {
+    // Lê o cookie do último acesso.
     const ultimoAcesso = req.cookies.ultimoAcesso || 'Primeiro Acesso';
+    // Seta o novo valor do último acesso para a data e hora atuais.
     res.cookie('ultimoAcesso', new Date().toLocaleString());
     res.render('menu', { ultimoAcesso });
 });
 
-// -- CADASTRO DE EQUIPES --
+// CADASTRO DE EQUIPES
 app.get('/equipes', verificarAuth, (req, res) => {
     res.render('equipes', { equipes, erro: null });
 });
@@ -77,7 +90,7 @@ app.get('/equipes', verificarAuth, (req, res) => {
 app.post('/equipes', verificarAuth, (req, res) => {
     const { nome, capitao, contato } = req.body;
 
-    // Validação no Servidor [cite: 49, 72]
+    // Validação no Servidor
     if (!nome || !capitao || !contato) {
         return res.render('equipes', { equipes, erro: 'Todos os campos são obrigatórios!' });
     }
@@ -86,7 +99,7 @@ app.post('/equipes', verificarAuth, (req, res) => {
     res.redirect('/equipes');
 });
 
-// -- CADASTRO DE JOGADORES --
+// CADASTRO DE JOGADORES
 app.get('/jogadores', verificarAuth, (req, res) => {
     res.render('jogadores', { 
         equipes, 
@@ -98,7 +111,6 @@ app.get('/jogadores', verificarAuth, (req, res) => {
 app.post('/jogadores', verificarAuth, (req, res) => {
     const { nome, nickname, funcao, elo, genero, equipeId } = req.body;
 
-    // Validação no Servidor [cite: 59, 72]
     if (!nome || !nickname || !funcao || !elo || !genero || !equipeId) {
         return res.render('jogadores', { 
             equipes, 
@@ -107,7 +119,6 @@ app.post('/jogadores', verificarAuth, (req, res) => {
         });
     }
 
-    // Validação extra: limite de 5 jogadores por equipe [cite: 30]
     const qtdJogadores = jogadores.filter(j => j.equipeId == equipeId).length;
     if (qtdJogadores >= 5) {
         return res.render('jogadores', { 
@@ -126,10 +137,11 @@ app.post('/jogadores', verificarAuth, (req, res) => {
     res.redirect('/jogadores');
 });
 
+
+// EXPORTAÇÃO E INICIALIZAÇÃO 
 module.exports = app;
 
-// Inicialização
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+const PORT_FINAL = process.env.PORT || 3000;
+app.listen(PORT_FINAL, () => {
+    console.log(`Servidor rodando na porta ${PORT_FINAL}`);
 });
