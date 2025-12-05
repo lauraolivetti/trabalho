@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciar Equipes</title>
+</head>
+<body>
+    <a href="/">Voltar ao Menu</a>
+    <h2>Cadastro de Equipe</h2>
+    
+    <% if (erro) { %> <p style="color: red;"><%= erro %></p> <% } %>
+
+    <form action="/equipes" method="POST">
+        <label>Nome da Equipe: <input type="text" name="nome"></label><br>
+        <label>Capitão: <input type="text" name="capitao"></label><br>
+        <label>WhatsApp: <input type="text" name="contato"></label><br><br>
+        <button type="submit">Cadastrar Equipe</button>
+    </form>
+
+    <hr>
+
+    <h3>Equipes Cadastradas</h3>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Capitão</th>
+                <th>Contato</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (equipes.length > 0) { %>
+                <% equipes.forEach(time => { %>
+                    <tr>
+                        <td><%= time.nome %></td>
+                        <td><%= time.capitao %></td>
+                        <td><%= time.contato %></td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr><td colspan="3">Nenhuma equipe cadastrada.</td></tr>
+            <% } %>
+        </tbody>
+    </table>
+</body>
+</html>
