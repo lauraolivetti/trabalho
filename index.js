@@ -1,147 +1,179 @@
+// Configuração do Express e Middleware
 const express = require('express');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
-const bodyParser = require('body-parser');
 const path = require('path');
-
+const crypto = require('crypto'); 
 const app = express();
+const port = 3000;
 
-// Configurações do Express
+// Configuração do EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.urlencoded({ extended: true }));
+
+// Middleware para processar dados do formulário
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+
 app.use(cookieParser());
-
-//CORREÇÃO CRÍTICA PARA VERCEL (HTTPS/PROXY) 
-
-app.set('trust proxy', 1);
-
-// Configuração da Sessão (Requisito: 30 minutos)
 app.use(session({
-    secret: 'chave-secreta-do-campeonato',
-    resave: false,
+    secret: 'chaveSecretaLol', 
+    resave: false, 
     saveUninitialized: true,
     cookie: { 
-        maxAge: 30 * 60 * 1000, // 30 minutos
-        secure: true,
-        sameSite: 'none'
+        maxAge: 30 * 60 * 1000 // 30 minutos em milissegundos (mantém o login)
     }
 }));
 
-//ARMAZENAMENTO EM MEMÓRIA 
-const equipes = [];
-const jogadores = [];
 
-// MIDDLEWARE DE AUTENTICAÇÃO
-const verificarAuth = (req, res, next) => {
-    if (req.session.usuarioLogado) {
-        next();
+let equipes = [];
+let jogadores = [];
+let nextEquipeId = 1;
+
+//Função Middleware de Autenticação 
+function verificarAutenticacao(req, res, next) {
+    if (req.session.usuario) {
+        next(); 
     } else {
-        res.redirect('/login');
+        res.redirect('/login'); 
     }
-};
+}
 
-// ROTAS DE ACESSO
+//Funções de Ajuda (Cookies)
+function setUltimoAcessoCookie(res) {
+    const agora = new Date().toLocaleString('pt-BR');
+    res.cookie('ultimoAcesso', agora, { 
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 dias
+    });
+}
 
-// Tela de Login
+function getUltimoAcessoCookie(req) {
+    return req.cookies.ultimoAcesso || 'Primeiro acesso';
+}
+
+//ROTAS DE AUTENTICAÇÃO (Login / Logout)
+
+//Rota GET /login
 app.get('/login', (req, res) => {
+    if (req.session.usuario) {
+        return res.redirect('/');
+    }
     res.render('login', { erro: null });
 });
 
-// Processamento do Login
+//Rota POST /login
 app.post('/login', (req, res) => {
     const { usuario, senha } = req.body;
+    
+    //Credenciais: admin/admin
     if (usuario === 'admin' && senha === 'admin') {
-        req.session.usuarioLogado = true;
-        res.cookie('ultimoAcesso', new Date().toLocaleString(), { maxAge: 900000 });
+        req.session.usuario = usuario; 
+        setUltimoAcessoCookie(res);
         res.redirect('/');
     } else {
-        res.render('login', { erro: 'Usuário ou senha inválidos!' });
+        res.render('login', { erro: 'Credenciais inválidas. Tente novamente.' });
     }
 });
 
-// Logout
+//Rota GET /logout
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
-            console.error("Erro ao destruir sessão:", err);
+            console.error('Erro ao destruir sessão:', err);
+            return res.status(500).send('Erro ao fazer logout.');
         }
+        res.clearCookie('connect.sid');
         res.redirect('/login');
     });
 });
 
-// ROTAS DO SISTEMA (PROTEGIDAS)
-
-// Menu Principal
-app.get('/', verificarAuth, (req, res) => {
-    // Lê o cookie do último acesso.
-    const ultimoAcesso = req.cookies.ultimoAcesso || 'Primeiro Acesso';
-    // Seta o novo valor do último acesso para a data e hora atuais.
-    res.cookie('ultimoAcesso', new Date().toLocaleString());
+//ROTA PRINCIPAL (Menu)
+app.get('/', verificarAutenticacao, (req, res) => {
+    const ultimoAcesso = getUltimoAcessoCookie(req);
     res.render('menu', { ultimoAcesso });
 });
 
-// CADASTRO DE EQUIPES
-app.get('/equipes', verificarAuth, (req, res) => {
-    res.render('equipes', { equipes, erro: null });
+//  ROTAS DE CADASTRO DE EQUIPES 
+
+// Rota GET /equipes 
+app.get('/equipes', verificarAutenticacao, (req, res) => {
+    // É ESSENCIAL passar 'equipes' e 'erro' para a view.
+    res.render('equipes', { equipes: equipes, erro: null });
 });
 
-app.post('/equipes', verificarAuth, (req, res) => {
+// Rota POST /equipes 
+app.post('/equipes', verificarAutenticacao, (req, res) => {
     const { nome, capitao, contato } = req.body;
+    let erro = null;
 
-    // Validação no Servidor
     if (!nome || !capitao || !contato) {
-        return res.render('equipes', { equipes, erro: 'Todos os campos são obrigatórios!' });
+        erro = 'Todos os campos (Nome, Capitão, Contato) são obrigatórios.';
     }
 
-    equipes.push({ id: Date.now(), nome, capitao, contato });
+    if (!erro && equipes.some(e => e.nome.toLowerCase() === nome.toLowerCase())) {
+        erro = `A equipe "${nome}" já está cadastrada.`;
+    }
+
+    if (erro) {a
+        return res.render('equipes', { equipes: equipes, erro: erro });
+    }
+
+    const novaEquipe = {
+        id: nextEquipeId++,
+        nome: nome.trim(),
+        capitao: capitao.trim(),
+        contato: contato.trim()
+    };
+    equipes.push(novaEquipe);
+
     res.redirect('/equipes');
 });
 
-// CADASTRO DE JOGADORES
-app.get('/jogadores', verificarAuth, (req, res) => {
-    res.render('jogadores', { 
-        equipes, 
-        jogadores, 
-        erro: null 
-    });
+//ROTAS DE CADASTRO DE JOGADORES
+
+// Rota GET /jogadores 
+app.get('/jogadores', verificarAutenticacao, (req, res) => {
+    res.render('jogadores', { equipes: equipes, jogadores: jogadores, erro: null });
 });
 
-app.post('/jogadores', verificarAuth, (req, res) => {
+// Rota POST /jogadores 
+app.post('/jogadores', verificarAutenticacao, (req, res) => {
     const { nome, nickname, funcao, elo, genero, equipeId } = req.body;
+    let erro = null;
+    const equipeIDNum = parseInt(equipeId);
 
     if (!nome || !nickname || !funcao || !elo || !genero || !equipeId) {
-        return res.render('jogadores', { 
-            equipes, 
-            jogadores, 
-            erro: 'Todos os campos são obrigatórios! Selecione uma equipe.' 
-        });
+        erro = 'Todos os campos do jogador são obrigatórios.';
     }
 
-    const qtdJogadores = jogadores.filter(j => j.equipeId == equipeId).length;
-    if (qtdJogadores >= 5) {
-        return res.render('jogadores', { 
-            equipes, 
-            jogadores, 
-            erro: 'A equipe selecionada já possui 5 jogadores!' 
-        });
+    const equipeSelecionada = equipes.find(e => e.id === equipeIDNum);
+    if (!erro && !equipeSelecionada) {
+        erro = 'A equipe selecionada é inválida.';
     }
 
-    const nomeEquipe = equipes.find(e => e.id == equipeId)?.nome || 'Desconhecida';
+    const jogadoresDoTime = jogadores.filter(j => j.equipeId === equipeIDNum);
+    if (!erro && jogadoresDoTime.length >= 5) {
+        erro = `A equipe "${equipeSelecionada.nome}" já atingiu o limite de 5 jogadores.`;
+    }
 
-    jogadores.push({ 
-        nome, nickname, funcao, elo, genero, equipeId, nomeEquipe 
-    });
+    if (erro) {
+        return res.render('jogadores', { equipes: equipes, jogadores: jogadores, erro: erro });
+    }
+
+    const novoJogador = {
+        id: crypto.randomUUID(), 
+        nome: nome.trim(),
+        nickname: nickname.trim(),
+        funcao,
+        elo,
+        genero,
+        equipeId: equipeIDNum
+    };
+    jogadores.push(novoJogador);
 
     res.redirect('/jogadores');
 });
 
-
-// EXPORTAÇÃO E INICIALIZAÇÃO 
+//  INICIALIZAÇÃO DO SERVIDOR 
 module.exports = app;
-
-const PORT_FINAL = process.env.PORT || 3000;
-app.listen(PORT_FINAL, () => {
-    console.log(`Servidor rodando na porta ${PORT_FINAL}`);
-});
