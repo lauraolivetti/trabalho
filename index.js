@@ -126,7 +126,10 @@ app.post('/jogadores', verificarAuth, (req, res) => {
     res.redirect('/jogadores');
 });
 
+module.exports = app;
+
 // Inicialização
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Sistema rodando em http://localhost:${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
